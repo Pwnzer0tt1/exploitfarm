@@ -1,0 +1,24 @@
+@startuml attack_sequence
+
+!theme sketchy-outline
+!pragma teoz true
+
+actor       Client
+participant Server
+database    DB
+Client -> Server: Get the configuration
+Server <-- DB: Sync configuration
+Server --> Client: Send the configuration
+Client --> Server: Create service (if not exists)
+Server --> DB: Save the service
+Client -> Server: Create the exploit
+Server -> DB: Save the exploit and update timestamp
+group Attack Loop
+    Client <--> Server: (polling) get configuration
+    & Server <--> DB: Sync configuration
+    Client -> Server: (loop) Send attack data
+    Server -> DB: Save attack data / update timestamp
+end
+
+
+@enduml
