@@ -58,13 +58,14 @@ const setDefaultSubmitter = (id:number) => {
 }
 
 export const SubmitterModal = ({ open, onClose }:{ open:boolean, onClose:()=>void}) => {
-
     const status = statusQuery()
     const submitters = submittersQuery()
+    
     const [codeErrorDetails, setCodeErrorDetails] = useState({
         status: "loading",
         message: "Code check is loading..."
     })
+
     const dropZoneRef = useRef<() => void>(null);
     const [infoModal, setInfoModal] = useState(false)
     const [lastKArgsDetails, setLastKArgsDetails] = useState<{ [k:string]: {value:any, type:KargsSubmitter}}>({})
@@ -204,10 +205,8 @@ export const SubmitterModal = ({ open, onClose }:{ open:boolean, onClose:()=>voi
         } else if (submitters.isSuccess && selectedSubmitter != null){
             let kargs = {} as any
             Object.entries((selectedSubmitter.kargs)??{}).forEach((a) => {
-                //console.log(selectedSubmitter.kargs, "KARGS") //TODO: Remove this debug
                 kargs[a[0]] = (selectedSubmitter.kargs??{})[a[0]]?.value??a[1].value
             })
-            //console.log(kargs) //TODO: Remove this debug
             form.setInitialValues({
                 code: selectedSubmitter.code,
                 name: selectedSubmitter.name,
@@ -229,7 +228,7 @@ export const SubmitterModal = ({ open, onClose }:{ open:boolean, onClose:()=>voi
 
     useEffect(() => {
         if (open && submitters.isSuccess){
-            queryClient.resetQueries({ queryKey: ["submitters"] })
+            queryClient.refetchQueries({ queryKey: ["submitters"] })
             setResetOnRefetch(resetOnRefetch+1) 
         }
     }, [selectedOption, open, submitters.isSuccess])

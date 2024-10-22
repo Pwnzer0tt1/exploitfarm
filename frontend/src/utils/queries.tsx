@@ -106,7 +106,7 @@ export const editExploit = async (exploitId: string, values:{[k:string]:any}) =>
 }
 
 export const attackRequest = async (page:number, pageSize: number, others:AttackRequestOptions = {}) => {
-    return await getRequest("/flags/attacks",{
+    return await getRequest("/flags/attacks", {
         params: {
             page: page,
             size: pageSize,

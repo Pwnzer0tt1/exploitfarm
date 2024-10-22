@@ -8,7 +8,7 @@ import { CancelActionButton, EditActionButton, EnableActionButton } from "@/comp
 import { secondDurationToString } from "@/utils/time";
 import { AttackModeControl } from "@/components/inputs/Controllers";
 import { WelcomeTitle } from "@/components/elements/WelcomeTitle";
-import { notifications } from "@mantine/notifications";
+import { notifications, useNotifications } from "@mantine/notifications";
 import { MdError } from "react-icons/md";
 import { TeamEditModal } from "@/components/modals/TeamEditModal";
 import { useGlobalStore } from "@/utils/stores";
@@ -48,6 +48,11 @@ export const SetupScreen = ({ editMode, onSubmit }:{ editMode?:boolean, onSubmit
     const [openTeamModal, setOpenTeamModal] = useState(false)
     const [openSubmitterModal, setOpenSubmitterModal] = useState(false)
     const [infoAttackModeModal, setInfoAttackModeModal] = useState(false)
+    const notificationsStore = useNotifications();
+
+    const notificationExists = (id: string) => {
+        return notificationsStore.notifications.find((n)=>n.id == id)??notificationsStore.queue.find((n)=>n.id == id) != null
+    }
 
     const reset = (all: boolean = false) => {
         if (all){
@@ -69,16 +74,28 @@ export const SetupScreen = ({ editMode, onSubmit }:{ editMode?:boolean, onSubmit
     }, [status.isLoading])
     const finalConfig = useMemo<ConfigDict>(()=>({ ...((status.data?.config??{}) as ConfigDict), ...configInput }), [configInput, status.isFetching])
     const deltaConfig = useMemo<ConfigDict>(()=>{
-        if (lastStatusFetched !== status.data?.config){
+        if (status.isFetching) return {}
+        if (lastStatusFetched !== status.data?.config ){
+            if (notificationExists("setup-update")){
+                notifications.update({
+                    id: "setup-update",
+                    title: "Setting auto-update is running",
+                    message: "The setup has been saved on the server",
+                    autoClose: 700
+                })
+            }
             setLastStatusFetched(status.data?.config as ConfigDict)
             reset()
             setDisableInputs(false)
-            notifications.hide("setup-update")
             return {}
         }
         let res:any = {}
         Object.keys(finalConfig).forEach((key)=>{
             if (key == "SUBMITTER") return null
+            if ((key == "AUTHENTICATION_REQUIRED" || key == "PASSWORD_HASH")){
+                if (customPassword) return null
+
+            }
             if (key == "PASSWORD_HASH"){
                 if (finalConfig.PASSWORD_HASH == true && status.data?.config?.PASSWORD_HASH != null){
                     return null
@@ -88,11 +105,12 @@ export const SetupScreen = ({ editMode, onSubmit }:{ editMode?:boolean, onSubmit
                 res[key] = finalConfig[key]
             }
         })
+
         return res
     }, [finalConfig, status.isFetching, lastStatusFetched])
 
     const updateData = useDebouncedCallback(()=>{
-        if (Object.keys(deltaConfig).length == 0) return
+        if (Object.keys(deltaConfig).length == 0 || editMode) return
         setDisableInputs(true)
         notifications.show({
             id: "setup-update",
@@ -102,6 +120,7 @@ export const SetupScreen = ({ editMode, onSubmit }:{ editMode?:boolean, onSubmit
             loading: true,
             autoClose: false
         })
+        setLastStatusFetched((draft)=>{draft.PASSWORD_HASH = null})
         setSetup(deltaConfig).then(()=>{
             setErrorSetup(null)
             if (typeof finalConfig.PASSWORD_HASH == "string" ){
@@ -496,8 +515,6 @@ export const SetupScreen = ({ editMode, onSubmit }:{ editMode?:boolean, onSubmit
         <TeamEditModal close={()=>setOpenTeamModal(false)} opened={openTeamModal} />
         <SubmitterModal open={openSubmitterModal} onClose={()=>setOpenSubmitterModal(false)} />
         <AttackModeHelpModal onClose={()=>setInfoAttackModeModal(false)} open={infoAttackModeModal} />
-        <Space h="xl" />
-        <Space h="xl" />
-        <Space h="xl" />
+        <Space h="xl" /> <Space h="xl" /> <Space h="xl" />
     </Container>
 }
