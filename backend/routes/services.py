@@ -2,7 +2,7 @@ from models.service import *
 from models.response import *
 from db import Service
 from utils import *
-from typing import List, Type
+from typing import List
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/services", tags=["Services"])

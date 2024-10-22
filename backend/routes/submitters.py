@@ -44,11 +44,11 @@ async def info_submitter(data: SubmitterInfoForm):
     submit_function, error = extract_submit(data.code)
     
     if not submit_function:
-        return MessageResponse(status=ResponseStatus.INVALID, message=error, response=None)
+        raise MessageResponseInvalidError(error)
     
     valid_sig, msg = has_submit_signature(submit_function)
     if not valid_sig:
-        return MessageResponse(status=ResponseStatus.INVALID, message=msg, response=None)
+        raise MessageResponseInvalidError(msg)
     
     kargs = get_additional_args(submit_function)
     
